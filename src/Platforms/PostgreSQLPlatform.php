@@ -253,8 +253,19 @@ class PostgreSQLPlatform extends AbstractPlatform
 
             $newTypeSQLDeclaration = $this->getTypeSQLDeclaration($newColumn);
             $oldTypeSQLDeclaration = $this->getTypeSQLDeclaration($oldColumn);
-            if ($oldTypeSQLDeclaration !== $newTypeSQLDeclaration) {
+
+            $newCollation = $newColumn->getCollation();
+            $newCollation = $newCollation === 'default' ? null : $newCollation;
+            $oldCollation = $oldColumn->getCollation();
+
+            $typeChanged      = $oldTypeSQLDeclaration !== $newTypeSQLDeclaration;
+            $collationChanged = $oldCollation !== $newCollation;
+            if ($typeChanged || $collationChanged) {
                 $query = 'ALTER ' . $newColumnName . ' TYPE ' . $newTypeSQLDeclaration;
+                if ($typeChanged ? $newCollation !== null : $collationChanged) {
+                    $query .= ' ' . $this->getColumnCollationDeclarationSQL($newColumn->getCollation() ?? 'default');
+                }
+
                 $sql[] = 'ALTER TABLE ' . $tableNameSQL . ' ' . $query;
             }
 

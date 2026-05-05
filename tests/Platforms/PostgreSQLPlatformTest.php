@@ -24,7 +24,10 @@ use UnexpectedValueException;
 
 use function sprintf;
 
-/** @extends AbstractPlatformTestCase<PostgreSQLPlatform> */
+/**
+ * @extends AbstractPlatformTestCase<PostgreSQLPlatform>
+ * @phpstan-import-type PlatformOptions from Column
+ */
 class PostgreSQLPlatformTest extends AbstractPlatformTestCase
 {
     public function createPlatform(): AbstractPlatform
@@ -489,6 +492,100 @@ class PostgreSQLPlatformTest extends AbstractPlatformTestCase
         $schemaName = 'schema';
         $sql        = $this->platform->getCreateSchemaSQL($schemaName);
         self::assertEquals('CREATE SCHEMA ' . $schemaName, $sql);
+    }
+
+    /**
+     * @param array{platformOptions?: PlatformOptions} $oldOptions
+     * @param array{platformOptions?: PlatformOptions} $newOptions
+     * @param ?non-empty-string                        $newType
+     * @param list<string>                             $expectedSql
+     */
+    #[DataProvider('provideAlterColumnCollation')]
+    public function testAlterColumnCollation(
+        array $oldOptions,
+        array $newOptions,
+        ?string $newType,
+        array $expectedSql,
+    ): void {
+        $table = new Table('mytable');
+
+        $oldColumn = $table->addColumn('foo', Types::STRING, $oldOptions);
+        $newColumn = new Column('foo', Type::getType($newType ?? Types::STRING), $newOptions);
+
+        $tableDiff = new TableDiff($table, changedColumns: [
+            'foo' => new ColumnDiff(
+                $oldColumn,
+                $newColumn,
+            ),
+        ]);
+
+        $sql = $this->platform->getAlterTableSQL($tableDiff);
+
+        self::assertSame($expectedSql, $sql);
+    }
+
+    /**
+     * @return iterable<string, array{
+     *     array{platformOptions?: PlatformOptions},
+     *     array{platformOptions?: PlatformOptions},
+     *     ?string,
+     *     list<string>
+     * }>
+     */
+    public static function provideAlterColumnCollation(): iterable
+    {
+        $default  = ['platformOptions' => ['collation' => 'default']];
+        $unicode  = ['platformOptions' => ['collation' => 'unicode']];
+        $ucsBasic = ['platformOptions' => ['collation' => 'ucs_basic']];
+
+        yield 'implicit default to implicit default' => [
+            [],
+            [],
+            null,
+            [],
+        ];
+
+        yield 'implicit default to explicit default' => [
+            [],
+            $default,
+            null,
+            [],
+        ];
+
+        yield 'implicit default to unicode' => [
+            [],
+            $unicode,
+            null,
+            ['ALTER TABLE mytable ALTER foo TYPE VARCHAR COLLATE "unicode"'],
+        ];
+
+        yield 'unicode to implicit default' => [
+            $unicode,
+            [],
+            null,
+            ['ALTER TABLE mytable ALTER foo TYPE VARCHAR COLLATE "default"'],
+        ];
+
+        yield 'unicode to explicit default' => [
+            $unicode,
+            $default,
+            null,
+            ['ALTER TABLE mytable ALTER foo TYPE VARCHAR COLLATE "default"'],
+        ];
+
+        yield 'unicode to ucs_basic' => [
+            $unicode,
+            $ucsBasic,
+            null,
+            ['ALTER TABLE mytable ALTER foo TYPE VARCHAR COLLATE "ucs_basic"'],
+        ];
+
+        yield 'collated string to non-collatable type' => [
+            [],
+            [],
+            Types::INTEGER,
+            ['ALTER TABLE mytable ALTER foo TYPE INT'],
+        ];
     }
 
     public function testDroppingConstraintsBeforeColumns(): void

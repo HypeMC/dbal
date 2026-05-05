@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Doctrine\DBAL\Tests\Platforms\PostgreSQL;
+
+use Doctrine\DBAL\Platforms\PostgreSQL\Comparator;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Schema\ComparatorConfig;
+use Doctrine\DBAL\Tests\Schema\AbstractComparatorTestCase;
+
+class ComparatorTest extends AbstractComparatorTestCase
+{
+    protected function createComparator(ComparatorConfig $config): Comparator
+    {
+        return new Comparator(new PostgreSQLPlatform(), $config);
+    }
+}

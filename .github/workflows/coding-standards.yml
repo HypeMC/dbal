@@ -2,8 +2,6 @@ name: "Coding Standards"
 
 on:
   pull_request:
-    branches:
-      - "*.x"
     paths:
       - .github/workflows/coding-standards.yml
       - bin/**
@@ -12,8 +10,6 @@ on:
       - src/**
       - tests/**
   push:
-    branches:
-      - "*.x"
     paths:
       - .github/workflows/coding-standards.yml
       - bin/**

@@ -2,8 +2,6 @@ name: "CI: PHPUnit"
 
 on:
   pull_request:
-    branches:
-      - "*.x"
     paths:
       - .github/workflows/continuous-integration.yml
       - .github/workflows/phpunit-*.yml
@@ -13,8 +11,6 @@ on:
       - src/**
       - tests/**
   push:
-    branches:
-      - "*.x"
     paths:
       - .github/workflows/continuous-integration.yml
       - .github/workflows/phpunit-*.yml

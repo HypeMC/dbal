@@ -2,8 +2,7 @@ name: "Static Analysis"
 
 on:
   pull_request:
-    branches:
-      - "*.x"
+
     paths:
       - .github/workflows/static-analysis.yml
       - composer.*
@@ -12,8 +11,7 @@ on:
       - static-analysis/**
       - tests/**
   push:
-    branches:
-      - "*.x"
+
     paths:
       - .github/workflows/static-analysis.yml
       - composer.*
